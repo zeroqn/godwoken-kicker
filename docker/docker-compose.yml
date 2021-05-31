@@ -48,6 +48,7 @@ services:
     environment:
       FORCE_GODWOKEN_REDEPLOY: ${FORCE_GODWOKEN_REDEPLOY}
       MANUAL_BUILD_GODWOKEN: ${MANUAL_BUILD_GODWOKEN}
+    env_file: ./.build.mode.env
     command: bash /code/godwoken_entrypoint.sh
     ports:
       - 8116:8116
