@@ -104,88 +104,91 @@ build-image:
 		source ./gw_util.sh && update_godwoken_dockerfile_to_manual_mode ; \
 	fi
 	make install
-	cd docker && docker-compose build --no-rm
+	cd docker && podman-compose build
 
 show_wait_tips: SHELL:=/bin/bash
 show_wait_tips:
 	source ./gw_util.sh && show_wait_tips	
 
-start: 
-	cd docker && FORCE_GODWOKEN_REDEPLOY=false docker-compose --env-file .build.mode.env up -d --build > /dev/null
+up: 
+	cd docker && FORCE_GODWOKEN_REDEPLOY=false podman-compose up -d --build > /dev/null
 	make show_wait_tips
 
-start-f:
-	cd docker && FORCE_GODWOKEN_REDEPLOY=true docker-compose --env-file .build.mode.env up -d --build > /dev/null
+up-f:
+	cd docker && FORCE_GODWOKEN_REDEPLOY=true podman-compose up -d --build > /dev/null
 	make show_wait_tips
 
 restart:
-	cd docker && docker-compose restart
+	cd docker && podman-compose restart
+
+start:
+	cd docker && podman-compose start postgres ckb godwoken polyjuice call-polyman web3 indexer
 
 stop:
-	cd docker && docker-compose stop
+	cd docker && podman-compose stop postgres ckb godwoken polyjuice call-polyman web3 indexer
 
 pause:
-	cd docker && docker-compose pause
+	cd docker && podman-compose pause
 
 unpause:
-	cd docker && docker-compose unpause
+	cd docker && podman-compose unpause
 
 down:
-	cd docker && docker-compose down --remove-orphans
+	cd docker && podman-compose down
 
 # show polyjuice
 sp:
-	cd docker && docker-compose logs -f --tail 200 polyjuice
+	cd docker && podman-compose logs -f --tail 200 polyjuice
 
 # show godwoken
 sg:
-	cd docker && docker-compose logs -f --tail 200 godwoken
+	cd docker && podman-compose logs -f --tail 200 godwoken
 
 stop-godwoken:
-	cd docker && docker-compose stop godwoken
+	cd docker && podman-compose stop godwoken
 
 stop-polyjuice:
-	cd docker && docker-compose stop polyjuice
+	cd docker && podman-compose stop polyjuice
 
 start-polyjuice:
-	cd docker && docker-compose start polyjuice
+	cd docker && podman-compose start polyjuice
 
 # show ckb-indexer
 si:
-	cd docker && docker-compose logs -f ckb-indexer
+	cd docker && podman-compose logs -f ckb-indexer
 
 web3:
-	cd docker && docker-compose logs -f --tail 200 web3
+	cd docker && podman-compose logs -f --tail 200 web3
 
 stop-web3:
-	cd docker && docker-compose stop web3
+	cd docker && podman-compose stop web3
 
 start-web3:
-	cd docker && docker-compose start web3
+	cd docker && podman-compose start web3
 
 enter-web3:
-	cd docker && docker-compose exec web3 bash
+	cd docker && podman-compose exec web3 bash
 
 ckb:
-	cd docker && docker-compose logs -f --tail 200 ckb
+	cd docker && podman-compose logs -f --tail 200 ckb
 
 stop-ckb:
-	cd docker && docker-compose stop ckb
+	cd docker && podman-compose stop ckb
 
 start-ckb:
-	cd docker && docker-compose start ckb
+	cd docker && podman-compose start ckb
 
 enter-ckb:
-	cd docker && docker-compose exec ckb bash
+	cd docker && podman-compose exec ckb bash
 
 enter-db:
-	cd docker && docker-compose exec postgres bash
+	cd docker && podman-compose exec postgres bash
 
 enter-g:
-	cd docker && docker-compose exec godwoken bash
+	cd docker && podman-compose exec godwoken bash
 
 enter-p:
-	cd docker && docker-compose exec polyjuice bash	
+	cd docker && podman-compose exec polyjuice bash	
 
 test:
 	docker run -t -d --name testimage retricsu/gowoken-build_dev:ubuntu20 
@@ -199,7 +202,7 @@ test-web3-rpc:
 
 gen-schema:
 	make clean-schema
-	cd docker && docker-compose up gen-godwoken-schema
+	cd docker && podman-compose up gen-godwoken-schema
 
 clean-schema:
 	cd docker/gen-godwoken-schema && rm -rf schemas/*
@@ -225,7 +228,7 @@ prepare-schema-for-web3:
 	mv ./godwoken-web3/packages/godwoken/godwoken.json ./godwoken-web3/packages/godwoken/schemas/index.json
 
 status:
-	cd docker && docker-compose ps
+	cd docker && podman-compose ps
 
 
 clean-polyjuice:
@@ -237,10 +240,10 @@ reset-polyjuice:
 	make start-polyjuice
 
 call-polyman:
-	cd docker && docker-compose logs -f call-polyman
+	cd docker && podman-compose logs -f call-polyman
 
 start-godwoken:
-	cd docker && docker-compose start godwoken
+	cd docker && podman-compose start godwoken
 
 build-godwoken:
 	docker run --rm -it -v `pwd`/godwoken:/app -v `pwd`/cargo-cache-data:/root/.cargo/registry -w=/app retricsu/godwoken-manual-build cargo build
