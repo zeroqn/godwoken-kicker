@@ -111,6 +111,13 @@ show_wait_tips:
 	source ./gw_util.sh && show_wait_tips	
 
 up: 
+	mkdir -p cache/activity/web3-data/address-mapping
+	mkdir -p cache/activity/postgres-data
+	mkdir -p cache/activity/indexer-data
+	mkdir -p cache/activity/polyjuice
+	mkdir -p cache/activity/call-polyman
+	mkdir -p cache/activity/ckb-cli-data
+	mkdir -p cache/activity/ckb-chain-data
 	cd docker && FORCE_GODWOKEN_REDEPLOY=false podman-compose up -d --build > /dev/null
 	make show_wait_tips
 
