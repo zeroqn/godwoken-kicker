@@ -1,10 +1,10 @@
 # Requires docker-compose >= 1.29.0
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
     image: postgres:alpine
-    ports: 
+    ports:
       - 5432:5432
     environment:
       POSTGRES_USER: user
@@ -12,11 +12,11 @@ services:
       POSTGRES_PASSWORD: password
     volumes:
       - ./postgres/data:/var/lib/postgresql/data
-    
+
   redis:
     image: redis:bullseye
     user: root:root
-    ports: 
+    ports:
       - 6379:6379
     volumes:
       - ./redis/data:/data
@@ -25,11 +25,11 @@ services:
     image: nervos/ckb:v0.103.0
     user: root
     ports:
-      - 8114:8114   # rpc
-      - 8115:8115   # p2p network
+      - 8114:8114 # rpc
+      - 8115:8115 # p2p network
     volumes:
       - ./layer1/ckb:/var/lib/ckb
-    command: [ "run", "-C", "/var/lib/ckb" ]
+    command: ["run", "-C", "/var/lib/ckb"]
 
   ckb-miner:
     init: true
@@ -37,7 +37,7 @@ services:
     user: root
     volumes:
       - ./layer1/ckb:/var/lib/ckb
-    command: [ "miner", "-C", "/var/lib/ckb" ]
+    command: ["miner", "-C", "/var/lib/ckb"]
 
   # "nervos/ckb" image have no http clients to do health check for CKB.
   # This short-term service act as a workaround to do health check.
@@ -45,7 +45,14 @@ services:
     image: curlimages/curl
     volumes:
       - ./layer1/ckb:/var/lib/ckb
-    command: [ 'http://ckb:8114', '-H', 'content-type: application/json', '-d', '{ "id": 2, "jsonrpc": "2.0", "method": "get_tip_block_number", "params": [] }' ]
+    command:
+      [
+        "http://ckb:8114",
+        "-H",
+        "content-type: application/json",
+        "-d",
+        '{ "id": 2, "jsonrpc": "2.0", "method": "get_tip_block_number", "params": [] }',
+      ]
     deploy:
       restart_policy:
         condition: on-failure
@@ -62,7 +69,15 @@ services:
       - "8116:8116"
     volumes:
       - ./ckb-indexer:/var/lib/ckb-indexer
-    command: [ "-c", "http://ckb:8114", "-l", "0.0.0.0:8116", "-s", "/var/lib/ckb-indexer/data" ]
+    command:
+      [
+        "-c",
+        "http://ckb:8114",
+        "-l",
+        "0.0.0.0:8116",
+        "-s",
+        "/var/lib/ckb-indexer/data",
+      ]
     deploy:
       restart_policy:
         condition: on-failure
@@ -86,6 +101,8 @@ services:
       STORE_PATH: /var/lib/layer2/data
       ACCOUNTS_DIR: /accounts
       GITHUB_RUN_ID: ${GITHUB_RUN_ID:-""}
+      OTEL_EXPORTER_JAEGER_AGENT_HOST: jaeger
+      OTEL_EXPORTER_JAEGER_AGENT_PORT: 6831
     volumes:
       - ./layer2:/var/lib/layer2
       - ../accounts:/accounts
@@ -187,7 +204,7 @@ services:
       restart_policy:
         condition: on-failure
         max_attempts: 10
-    depends_on: 
+    depends_on:
       web3:
         condition: service_healthy
       godwoken-readonly:
@@ -196,3 +213,54 @@ services:
         condition: service_started
       redis:
         condition: service_started
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.38
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - 5778:5778
+      - 16686:16686
+      - 14250:14250
+      - 14268:14268
+      - 14269:14269
+      - 9411:9411
+    environment:
+      COLLECTOR_ZIPKIN_HOST_PORT: ":9411"
+
+  prometheus:
+    image: prom/prometheus:v2.38.0
+    user: "$UID:$GID"
+    restart: unless-stopped
+    volumes:
+      - ./devops/prometheus:/etc/prometheus
+
+  loki:
+    image: grafana/loki:2.6.1
+    user: "$UID:$GID"
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./devops/loki/loki-config.yml:/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:2.6.1
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./devops/loki/promtail-config.yml:/etc/promtail/config.yml
+
+  grafana:
+    image: grafana/grafana:9.1.6
+    user: "$UID:$GID"
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    environment:
+      GF_DEFAULT_INSTANCE_NAME: godwoken
+      GF_SECURITY_ADMIN_USER: gwadmin
+      GF_SECURITY_ADMIN_PASSWORD: gwadmin
+    volumes:
+      - ./devops/grafana/data:/var/lib/grafana
+      - ./devops/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./devops/grafana/dashboards:/etc/grafana/dashboards

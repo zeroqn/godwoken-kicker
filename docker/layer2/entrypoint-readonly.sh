@@ -19,6 +19,11 @@ function generate_godwoken_readonly_config() {
     sed -i 's@listen = "/ip4/.*"@dial = ["/dns4/godwoken/tcp/9999"]@' $CONFIG_DIR/godwoken-config-readonly.toml
     sed -i '/^\[block_producer.wallet_config\]/,+7d' $CONFIG_DIR/godwoken-config-readonly.toml
 
+    cat >> $CONFIG_DIR/godwoken-config.toml <<EOF
+
+trace = 'jaeger'
+EOF
+
     log "Generate file \"$CONFIG_DIR/godwoken-config-readonly.toml\""
 }
 

@@ -140,6 +140,8 @@ function generate_godwoken_config() {
     fi
     cat >> $CONFIG_DIR/godwoken-config.toml <<EOF
 
+trace = 'jaeger'
+
 [p2p_network_config]
 listen = "/ip4/0.0.0.0/tcp/9999"
 EOF
